@@ -1,0 +1,73 @@
+import speech_recognition as sr
+import pyttsx3
+import pywhatkit
+import datetime
+import wikipedia
+import pyjokes
+
+listener = sr.Recognizer()
+engine = pyttsx3.init()
+
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[1].id)
+
+def talk(text):
+    engine.say(text)
+    engine.runAndWait()
+
+def get_command():
+    command = ""
+    try:
+        with sr.Microphone() as source:
+            print("Listening....")
+            voice = listener.listen(source)
+            print("Recognizing...")
+            command = listener.recognize_google(voice)
+            command = command.lower()
+            print("You said:", command)
+            if "youtube" in command:
+                command = command.replace("youtube", "")
+
+    except sr.UnknownValueError:
+        print("Sorry, could not understand audio.")
+    except sr.RequestError as e:
+        print(f"Could not request results from Google Speech Recognition service; {e}")
+
+    return command
+
+def run_assistant():
+    command = get_command()
+    print(command)
+    if 'play' in command:
+        song = command.replace("play", ' ')
+        talk("playing" + song)
+        pywhatkit.playonyt(song)
+        print("Playing songs")
+
+    elif "time" in command:
+        time = datetime.datetime.now().strftime("%H : %M %p")
+        talk("Now time is " + time)
+
+    elif "tell me about" in command:
+        about = command.replace("tell me about", "")
+        info = wikipedia.summary(about, 2)
+        print(info)
+        talk(info)
+    elif "joke" in command:
+        talk(pyjokes.get_joke())
+
+    else:
+        talk("sorry I can't understand, tell me again")
+
+    # Ask if there are any other questions
+    talk("Do you have any other questions? Yes or No")
+    response = get_command()
+
+    if "yes" in response:
+        return False  # Continue listening
+    else:
+        return True   # Stop listening
+
+while True:
+    if run_assistant():
+        break
